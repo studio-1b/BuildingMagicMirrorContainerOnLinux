@@ -36,7 +36,13 @@ b/c I changed to "config/config.js" to listen on port 3000.  Same one you downlo
 >[!WARNING]
 > You need to have your own AWS account, and create your own AWS ECR public repository, before you make the changes below
 
+This has some guidance on creating AWS ECR repository:
+https://blog.tericcabrel.com/push-docker-image-aws-elastic-container-registry/
+
 Use a text editor and goto the last lines of the file "install_magicmirror.sh", and change the 1)image tag AND 2)push commands to YOUR repository for a container image.
+
+>[!WARNING]
+>The script currently pushes to my public ECR container repository.  And you don't have a >password for it.  So, if you start a AWS account, you can create your own ECR public >repository, and password with permissions to upload to your own repository, which is what you >are replacing in the script above.
 
 <pre>
 if [ "$1" == "pushonly" ]; then
@@ -47,15 +53,13 @@ if [ "$1" == "pushonly" ]; then
     echo "pushed to public ECR repository"
 fi
 </pre>
+>[!INFO]
+>You will notice in AWS ECR, after creating your first repository, that there is button named "Push commands".  It opens a dialog, that shows the exact 1)image tag AND 2)push commands  commands that the above needs to be replaced with.
 
-It currently pushes to my public ECR container repository.  And you don't have a password for it.  So, if you start a AWS account, you can create your own ECR public repository, and password with permissions to upload to your own repository, which is what you are replacing in the script above.
-
-This has some guidance on creating ECR repository:
-https://blog.tericcabrel.com/push-docker-image-aws-elastic-container-registry/
 
 Most instructions don't have enough data about the step ..."Retrieve an authentication token and authenticate your Docker client to your registry...".  This means you goto your AWS account, upper-right-corner is [Your name], open that menu, click "security credentials"
 Goto the menu on left side "Users".  Click button "create user".  Give name like "publicecr".  Finish creating user.
-After user is created, click into user "publicecr" or whatever you named it.  
+After user is created, click into user "publicecr" or whatever you named it.
 1) security credentials tab.  Create Access Key.  You need this and the secret key, to when you run "aws configure".
 2) permissions tab.  You need to add permission for ECR-public.  The permission to upload to AWS ECR public repository is in a JSON format below.
 ```
@@ -78,11 +82,11 @@ After user is created, click into user "publicecr" or whatever you named it.
     ]
 }
 ```
-Then you need to save credentials for AWS, by running 
+Then you need to save credentials for AWS you created in previous step, by running 
 ```
 aws configure
 ```
-The above, asks for a secret key and you have to look on internet on guidance on that.
+
 
 
 Then after all that is done, run:
@@ -160,4 +164,6 @@ You should be able to download the image with same tag, you used up upload it.
 ```
 docker pull <tag>
 ```
+
+Now anyone can download it from anywhere on the Internet.
 
