@@ -42,7 +42,10 @@ https://blog.tericcabrel.com/push-docker-image-aws-elastic-container-registry/
 Use a text editor and goto the last lines of the file "install_magicmirror.sh", and change the 1)image tag AND 2)push commands to YOUR repository for a container image.
 
 >[!WARNING]
->The script currently pushes to my public ECR container repository.  And you don't have a >password for it.  So, if you start a AWS account, you can create your own ECR public >repository, and password with permissions to upload to your own repository, which is what you >are replacing in the script above.
+> The script currently pushes to my public ECR container repository.  And you don't have a 
+> password for it.  So, if you start a AWS account, you can create your own ECR public 
+> repository, and password with permissions to upload to your own repository, which is what you 
+> are replacing in the script above.
 
 <pre>
 if [ "$1" == "pushonly" ]; then
