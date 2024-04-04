@@ -1,6 +1,15 @@
 # BuildingMagicMirrorContainerOnLinux
 Container for serveronly instance of MagicMirror.  Bash scripts to automate entire process and Dockerfile for container build instruction.  Script has notes to upload docker image to AWS public ECR.
 
+- MagicMirror is a opensource project built in Nodejs platform, to provide a dashboard rendered by a javascript renderer named Electron.  But it has a serveronly mode, that works well as webserver.
+. [https://github.com/MagicMirrorOrg/MagicMirror](https://github.com/MagicMirrorOrg/MagicMirror)
+- AWS is Amazon's Cloud Services platform
+- ECR is AWS's docker container image repository
+- There are 2 kinds of repositories: private and public, henceforth referred to as ECR and ECR-public
+- private ECR repositories, you need credentials to download and upload.  
+- Public ECR repositories, you only need credentials to upload.  Anyone can download from Internet
+- AWS ECR does have a cost, but a generous free tier [https://aws.amazon.com/ecr/pricing/](https://aws.amazon.com/ecr/pricing/).
+
 ## To download these scripts
 
 ```bash
@@ -9,16 +18,37 @@ git clone https://github.com/studio-1b/BuildingMagicMirrorContainerOnLinux.git
 
 ## To create the docker image, and run in background, just run
 
-The shell script automates instructions to build a MagicMirror server-only instance.  The Dockerfile has instruction to download MagicMirror software from github
+The shell script automates instructions to build a MagicMirror server-only instance.  The Dockerfile has instruction to download MagicMirror software from github.  Then creates a container image, and runs it in background.
 
 ```bash
 ./install_magicmirror.sh
 ```
 
+After it is finished, the magic mirror software should be running in server-only mode.  Goto your internet browser and visit:
+```
+http://localhost:3000/
+```
+b/c I changed to "config/config.js" to listen on port 3000.  Same one you downloaded from github.  The Dockerfile just instructs docker to overwrite the default file downloaded from MagicMirror github, with the one with my permission changes and port changes.
+
+
 ## To build the docker image, don't run it, BUT push the image to docker repository
 
-use a text editor and goto the last lines of the file, and change the 1)tag AND 2)push commands to YOUR repository for a container image.
-it currently pushes to my public ECR container repository.  And you don't have a password for it.  So, if you start a AWS account, you can create your own ECR public repository, and password with permissions to upload.
+>[!WARNING]
+> You need to have your own AWS account, and create your own AWS ECR public repository, before you make the changes below
+
+Use a text editor and goto the last lines of the file "install_magicmirror.sh", and change the 1)image tag AND 2)push commands to YOUR repository for a container image.
+
+<pre>
+if [ "$1" == "pushonly" ]; then
+  aws ecr-public get-login-password --region <b><i>&lt;your AWS region>&gt;</i></b> | docker login --username AWS --password-stdin <b><i>&lt;this was my public repo URL, with a MagicMirror container image&gt;</i></b>
+  docker tag mm_serveronly:latest <b><i>&lt;this was my public repo URL, with a MagicMirror container image&gt;</i></b>
+  docker push <b><i>&lt;this was my public repo URL, with a MagicMirror container image&gt;</i></b>
+  if [ $? -eq 0 ]; then
+    echo "pushed to public ECR repository"
+fi
+</pre>
+
+It currently pushes to my public ECR container repository.  And you don't have a password for it.  So, if you start a AWS account, you can create your own ECR public repository, and password with permissions to upload to your own repository, which is what you are replacing in the script above.
 
 This has some guidance on creating ECR repository:
 https://blog.tericcabrel.com/push-docker-image-aws-elastic-container-registry/
@@ -27,7 +57,8 @@ Most instructions don't have enough data about the step ..."Retrieve an authenti
 Goto the menu on left side "Users".  Click button "create user".  Give name like "publicecr".  Finish creating user.
 After user is created, click into user "publicecr" or whatever you named it.  
 1) security credentials tab.  Create Access Key.  You need this and the secret key, to when you run "aws configure".
-2) permissions tab.  You need to add permission for ECR-public.  The permission is in a JSON format below.
+2) permissions tab.  You need to add permission for ECR-public.  The permission to upload to AWS ECR public repository is in a JSON format below.
+```
 {
     "Version": "2012-10-17",
     "Statement": [
@@ -46,7 +77,13 @@ After user is created, click into user "publicecr" or whatever you named it.
         }
     ]
 }
-Then you need to run "aws configure"
+```
+Then you need to save credentials for AWS, by running 
+```
+aws configure
+```
+The above, asks for a secret key and you have to look on internet on guidance on that.
+
 
 Then after all that is done, run:
 
@@ -56,8 +93,11 @@ Then after all that is done, run:
 
 It should look like
 
+```
 ./install_magicmirror.sh pushonly
+
 ... unimportant stuff like checking if running on EC2...
+
 Last metadata expiration check: 0:38:49 ago on Tue 19 Mar 2024 04:24:01 PM PDT.
 
 aws-cli/2.15.2 Python/3.12.1 Linux/6.6.14-200.fc39.x86_64 source/x86_64.fedora.39 prompt/off
@@ -115,3 +155,9 @@ e6e2ab10dba6: Pushed
 0238a1790324: Pushed 
 latest: digest: sha256:XXXXXXXX size: 9999
 pushed to public ECR repository
+```
+You should be able to download the image with same tag, you used up upload it.
+```
+docker pull <tag>
+```
+
